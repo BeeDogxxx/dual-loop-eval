@@ -1,0 +1,5 @@
+{"id": "over_promise", "text": "over_promise / 过度承诺: 不得在未核验订单与政策前承诺全额退款或跳过策略。"}
+{"id": "budget_cap", "text": "budget_cap / 预算上限: 投放与实验必须遵守日预算，禁止不限预算或预算外追加。"}
+{"id": "cold_start_no_blind_boost", "text": "cold_start_no_blind_boost / 冷启动禁止盲目加权: 无点击/曝光数据时不得 blind boost。"}
+{"id": "tool_scope", "text": "tool_scope / 工具权限: 仅使用最小权限工具，禁止 admin_purge、scope=all 等越权操作。"}
+{"id": "skill_routing", "text": "skill_routing / 技能路由: 物流查询走 shipping_tracker，退款走 refund_api，禁止错路由。"}

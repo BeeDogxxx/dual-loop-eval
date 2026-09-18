@@ -1,4 +1,4 @@
-.PHONY: install demo test
+.PHONY: install demo test pairwise
 
 PYTHON ?= .venv/bin/python
 PIP ?= .venv/bin/pip
@@ -11,6 +11,8 @@ install:
 demo: install
 	$(PYTHON) -m dual_loop_eval.cli demo
 
+pairwise: install
+	$(PYTHON) -m dual_loop_eval.cli pairwise-demo
+
 test: install
 	$(PYTHON) -m pytest -q
-

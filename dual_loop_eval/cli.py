@@ -75,6 +75,29 @@ def cmd_test_pack(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+
+def cmd_pairwise_demo(args: argparse.Namespace) -> int:
+    from dual_loop_eval.judge.pairwise import run_pairwise_demo
+
+    settings = get_settings()
+    artifact_dir = args.artifact_dir or str(settings.artifact_dir)
+    summary = run_pairwise_demo(
+        artifact_dir=artifact_dir,
+        rounds=args.rounds,
+        seed=args.seed,
+        mode=args.mode,
+    )
+    console.print(
+        f"[green]Pairwise demo done[/] golden={summary['n_golden']} "
+        f"evaluated={summary['n_evaluated']} "
+        f"(dropped inconsistent={summary['n_dropped_inconsistent']}, "
+        f"label={summary['n_dropped_label']})"
+    )
+    console.print(f"  report: {summary['report']}")
+    console.print(f"  golden: {summary['golden_jsonl']}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="dual-loop-eval",
@@ -93,6 +116,16 @@ def build_parser() -> argparse.ArgumentParser:
     tp = sub.add_parser("test-pack", help="Validate scenario pack structure")
     tp.add_argument("--pack", default="customer_service_v1")
     tp.set_defaults(func=cmd_test_pack)
+
+    pw = sub.add_parser(
+        "pairwise-demo",
+        help="Pairwise Rubric Judge: position randomization + consistency filter",
+    )
+    pw.add_argument("--artifact-dir", default=None)
+    pw.add_argument("--rounds", type=int, default=3)
+    pw.add_argument("--seed", type=int, default=42)
+    pw.add_argument("--mode", choices=["mock", "llm"], default="mock")
+    pw.set_defaults(func=cmd_pairwise_demo)
 
     return p
 

@@ -71,6 +71,7 @@ dual-loop-eval demo --engine deepteam
 ```bash
 dual-loop-eval demo          # 默认 heuristic 引擎
 dual-loop-eval test-pack     # 校验场景包结构
+dual-loop-eval pairwise-demo # Pairwise Rubric Judge demo
 python -m dual_loop_eval.cli demo
 ```
 
@@ -98,11 +99,37 @@ python -m dual_loop_eval.cli demo
 
 ---
 
+
+
+## Pairwise Rubric Judge
+
+> 迷你 demo，**不是**完整 Auto Rubrics 流水线。吸收淘天 Auto Rubrics 类文章的三点教训：
+
+| 陷阱 | 我们的做法 |
+|------|------------|
+| **位置偏差 (position bias)** | 每轮随机交换 A/B 展示顺序，再把 winner **映射回**原始 `a`/`b` |
+| **一致性 ≠ 正确性** | 多轮同意只作 **confidence filter**；有人工 `label_chosen` 时还必须对得上 |
+| **宁缺毋滥 (precision > coverage)** | Golden Set 只保留「一致 ∧ 标签匹配」的 (pair, rubric, judgment) |
+
+```bash
+make pairwise
+# 或
+dual-loop-eval pairwise-demo
+```
+
+产出：
+
+- `artifacts/pairwise_report.md` — 说明随机化 / 一致性过滤 / 与双循环资产的关系
+- `artifacts/golden_preferences.jsonl` — 高精度偏好子集
+
+数据：`dual_loop_eval/assets/data/preference_pairs.jsonl`、`rubrics.jsonl`。默认 **mock** 启发式，无网络。
+
 ## 开发
 
 ```bash
-make test    # pytest，无网络
-make demo    # 端到端本地 demo
+make test      # pytest，无网络
+make demo      # 端到端本地 demo
+make pairwise  # Pairwise Rubric Judge demo
 ```
 
 ---
