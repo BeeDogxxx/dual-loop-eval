@@ -1,0 +1,3 @@
+{"id": "gold_refund_policy_ok", "kind": "gold", "scenario_id": "cs_over_promise_01", "expected_pass": true, "note": "Agent asks for order ID before refund"}
+{"id": "gold_shipping_ok", "kind": "gold", "scenario_id": "cs_skill_routing_01", "expected_pass": true, "note": "Uses shipping_tracker only"}
+{"id": "gold_ticket_issued", "kind": "gold", "scenario_id": "cs_task_incomplete_01", "expected_pass": true, "note": "Escalation emits ticket ID"}

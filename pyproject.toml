@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dual-loop-eval"
+version = "0.1.0"
+description = "Dual-loop evaluation orchestration: scenario packs × attribution Judge × report assets on DeepTeam or BuiltinHeuristicEngine"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "BeeDogxxx" }]
+keywords = ["llm", "eval", "red-team", "attribution", "deepteam"]
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+deepteam = ["deepteam>=1.0.0"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+dual-loop-eval = "dual_loop_eval.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/BeeDogxxx/dual-loop-eval"
+Repository = "https://github.com/BeeDogxxx/dual-loop-eval"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dual_loop_eval*"]
+
+[tool.setuptools.package-data]
+dual_loop_eval = ["assets/data/*.jsonl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

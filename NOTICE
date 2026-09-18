@@ -1,0 +1,19 @@
+dual-loop-eval
+Copyright 2026 BeeDogxxx
+
+This project is an orchestration / scenario / attribution layer.
+It optionally integrates with DeepTeam as the red-teaming engine.
+
+---
+
+DeepTeam
+Copyright Confident AI
+https://github.com/confident-ai/deepteam
+
+Licensed under the Apache License, Version 2.0.
+https://www.apache.org/licenses/LICENSE-2.0
+
+When the optional [deepteam] extra is installed, DeepTeam provides
+the underlying attack-generation / red-team execution engine.
+dual-loop-eval itself supplies scenario packs, attribution Judge,
+dual-loop assets (gold / error / challenge), and report rendering.

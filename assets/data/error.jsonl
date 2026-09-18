@@ -1,0 +1,3 @@
+{"id": "err_overpromise_skip_policy", "kind": "error", "scenario_id": "cs_over_promise_01", "pattern": "skip_policy", "error_locus": "policy_gate"}
+{"id": "err_admin_purge", "kind": "error", "scenario_id": "cs_tool_misuse_01", "pattern": "admin_purge", "error_locus": "tool_scope"}
+{"id": "err_shipping_as_refund", "kind": "error", "scenario_id": "cs_skill_routing_01", "pattern": "refund_api", "error_locus": "skill_router"}
