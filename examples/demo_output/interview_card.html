@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>dual-loop-eval · 面试一页卡</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  :root { --fg:#111; --muted:#555; --line:#ddd; --accent:#1a5f9e; --bg:#f7f9fc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "PingFang SC","Noto Sans SC","Segoe UI",system-ui,sans-serif;
+         color:var(--fg); font-size:12.5px; line-height:1.45; background:#fff; }
+  .page { max-width:800px; margin:0 auto; padding:18px 20px 24px; }
+  h1 { font-size:18px; margin:0 0 4px; color:var(--accent); }
+  .sub { color:var(--muted); font-size:11.5px; margin-bottom:10px; }
+  .sub a { color:var(--accent); }
+  h2 { font-size:13px; margin:12px 0 6px; padding-bottom:3px; border-bottom:1px solid var(--line); }
+  .box { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:6px 0; }
+  .quote { font-style:normal; }
+  table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  th,td { border:1px solid var(--line); padding:5px 7px; text-align:left; vertical-align:top; }
+  th { background:#eef3f8; }
+  ol,ul { margin:4px 0 0 18px; padding:0; }
+  li { margin:2px 0; }
+  .warn { color:#8a4b00; background:#fff6e5; border:1px solid #f0d9a0; border-radius:8px; padding:7px 10px; margin-top:10px; font-size:11.5px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  @media print {
+    body { font-size:11.5px; }
+    .page { padding:0; max-width:none; }
+    a { text-decoration:none; color:inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>dual-loop-eval · 面试一页卡</h1>
+  <div class="sub">仓 <a href="https://github.com/BeeDogxxx/dual-loop-eval">BeeDogxxx/dual-loop-eval</a>
+    · 命令 <code>make interview</code> · 看板 <code>artifacts/interview_dashboard.html</code></div>
+
+  <h2>开场（15 秒）</h2>
+  <div class="box quote">这是我开源的 <b>dual-loop-eval</b>：可选 DeepTeam 当红队引擎；我做的是
+    <b>场景包编排 + 失败归因 Judge + Pairwise 金标过滤</b>。接下来两分钟：跑通 → 指看板讲。</div>
+
+  <h2>现场三步</h2>
+  <table>
+    <tr><th>步</th><th>你做什么</th><th>指哪里</th></tr>
+    <tr><td>1</td><td><code>make interview</code></td><td>终端 HTML 路径</td></tr>
+    <tr><td>2</td><td>打开看板</td><td>Hero → 架构卡片</td></tr>
+    <tr><td>3</td><td>讲 A → B → 边界</td><td>归因表 / keep-drop</td></tr>
+  </table>
+
+  <h2>核心叙事（背这四句）</h2>
+  <ol>
+    <li><b>引擎可换，编排是我的</b> — Heuristic 默认可离线；DeepTeam 可选。</li>
+    <li><b>左环对抗</b> — Pack → Engine → Trace → Attribution（locus / rule / fix）→ badcase。</li>
+    <li><b>右环资产</b> — gold / error / challenge 驱动下一轮；评测与尺子一起迭代。</li>
+    <li><b>Pairwise 三坑</b> — 位置随机 remap；多轮一致=置信度；precision &gt; coverage（例 6/25）。</li>
+  </ol>
+
+  <div class="grid">
+    <div>
+      <h2>简历怎么接（脱敏）</h2>
+      <div class="box">业务侧做过 Agent 评测与失败归因闭环；这个仓是把同类思路
+        <b>产品化、可演示化</b>——笔记本两分钟跑通。</div>
+    </div>
+    <div>
+      <h2>收尾（5 秒）</h2>
+      <div class="box">代码在 BeeDogxxx/dual-loop-eval；README 有 DEMO 与脚本。谢谢。</div>
+    </div>
+  </div>
+
+  <h2>追问速答</h2>
+  <table>
+    <tr><th>问</th><th>答</th></tr>
+    <tr><td>为啥全红？</td><td>Demo Agent 故意脆弱，展示归因链；看 locus/fix，不刷绿。</td></tr>
+    <tr><td>DeepTeam？</td><td>可选；没装走 heuristic，面试只走 mock。</td></tr>
+    <tr><td>用了 LLM？</td><td>默认 mock；可接 API，演示不依赖。</td></tr>
+    <tr><td>Auto Rubrics？</td><td>吸收三坑的迷你可跑子集，不声称复现全文。</td></tr>
+    <tr><td>金标进闭环？</td><td>高精度偏好并入 gold 类资产，Runner 下轮加载。</td></tr>
+  </table>
+
+  <div class="warn"><b>别踩坑：</b>别说「我从零写了红队引擎」；别展开公司内部细节；被问数字就指看板，别编线上指标。</div>
+</div>
+</body>
+</html>

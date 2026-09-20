@@ -20,7 +20,7 @@ dual-loop-eval interview
 
 成功后打开终端打印的绝对路径：`artifacts/interview_dashboard.html`（自包含 CSS，无 CDN）。
 
-**口述脚本：** [`docs/INTERVIEW_SCRIPT.md`](docs/INTERVIEW_SCRIPT.md)  
+**口述脚本：** [`docs/INTERVIEW_SCRIPT.md · 一页卡 [`docs/INTERVIEW_CARD.md`](docs/INTERVIEW_CARD.md) / [HTML](docs/INTERVIEW_CARD.html)`](docs/INTERVIEW_SCRIPT.md)  
 **预生成样例（GitHub 可预览）：** [`examples/demo_output/interview_dashboard.html`](examples/demo_output/interview_dashboard.html)
 
 ---

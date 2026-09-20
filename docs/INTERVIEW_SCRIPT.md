@@ -94,3 +94,7 @@ A: 吸收三点教训（位置偏差、一致性≠正确性、precision>coverag
 ## 收尾（可选 5 秒）
 
 > 「代码在 GitHub BeeDogxxx/dual-loop-eval；文档里有这份脚本。感谢。」
+
+---
+
+一页速查卡：[`docs/INTERVIEW_CARD.md`](INTERVIEW_CARD.md) / [`docs/INTERVIEW_CARD.html`](INTERVIEW_CARD.html)（可打印）。
