@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from rich.console import Console
 
@@ -75,7 +76,6 @@ def cmd_test_pack(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
-
 def cmd_pairwise_demo(args: argparse.Namespace) -> int:
     from dual_loop_eval.judge.pairwise import run_pairwise_demo
 
@@ -95,6 +95,52 @@ def cmd_pairwise_demo(args: argparse.Namespace) -> int:
     )
     console.print(f"  report: {summary['report']}")
     console.print(f"  golden: {summary['golden_jsonl']}")
+    return 0
+
+
+def cmd_interview(args: argparse.Namespace) -> int:
+    """Run demo + pairwise + write interview dashboard; print path + tips."""
+    from dual_loop_eval.loop.dashboard import (
+        run_interview_pipeline,
+        write_interview_dashboard,
+    )
+
+    settings = get_settings()
+    artifact_dir = Path(args.artifact_dir or str(settings.artifact_dir))
+
+    if args.dashboard_only:
+        out = write_interview_dashboard(artifact_dir)
+    else:
+        out = run_interview_pipeline(
+            artifact_dir,
+            run_demo=not args.skip_demo,
+            run_pairwise=not args.skip_pairwise,
+        )
+
+    # Also refresh checked-in sample when writing under default artifacts/
+    sample = Path("examples/demo_output/interview_dashboard.html")
+    if not args.no_sample:
+        try:
+            sample.parent.mkdir(parents=True, exist_ok=True)
+            sample.write_text(out.read_text(encoding="utf-8"), encoding="utf-8")
+            sample_note = str(sample.resolve())
+        except OSError:
+            sample_note = "(sample copy skipped)"
+    else:
+        sample_note = "(skipped)"
+
+    abs_path = str(out.resolve())
+    console.print()
+    console.print(f"[bold green]Interview dashboard[/] → {abs_path}")
+    console.print(f"[dim]Sample copy[/] → {sample_note}")
+    console.print()
+    console.print("[bold]How to present (≤2 min)[/]")
+    console.print("  1. Open the HTML above in a browser (offline OK, no CDN).")
+    console.print("  2. Hero → honest scope (DeepTeam optional; we own orchestration).")
+    console.print("  3. Section A: fail rows → locus / rule / fix (attribution story).")
+    console.print("  4. Section B: pairwise keep/drop → position bias + precision>coverage.")
+    console.print("  5. Section C: 3 Q&As; script: docs/INTERVIEW_SCRIPT.md")
+    console.print()
     return 0
 
 
@@ -126,6 +172,25 @@ def build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--seed", type=int, default=42)
     pw.add_argument("--mode", choices=["mock", "llm"], default="mock")
     pw.set_defaults(func=cmd_pairwise_demo)
+
+    iv = sub.add_parser(
+        "interview",
+        help="Interview demo: adversarial + pairwise + HTML dashboard",
+    )
+    iv.add_argument("--artifact-dir", default=None)
+    iv.add_argument(
+        "--dashboard-only",
+        action="store_true",
+        help="Only regenerate HTML from existing artifacts",
+    )
+    iv.add_argument("--skip-demo", action="store_true", help="Skip adversarial demo run")
+    iv.add_argument("--skip-pairwise", action="store_true", help="Skip pairwise demo run")
+    iv.add_argument(
+        "--no-sample",
+        action="store_true",
+        help="Do not refresh examples/demo_output/interview_dashboard.html",
+    )
+    iv.set_defaults(func=cmd_interview)
 
     return p
 

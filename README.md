@@ -8,13 +8,30 @@
 
 ---
 
+## 面试 DEMO（推荐）
+
+> 周四面试：笔记本上 **一条命令 → 离线 HTML dashboard → 讲清双环 + 归因 + Pairwise**（≈2 分钟）。无需 API Key。
+
+```bash
+make interview
+# 或
+dual-loop-eval interview
+```
+
+成功后打开终端打印的绝对路径：`artifacts/interview_dashboard.html`（自包含 CSS，无 CDN）。
+
+**口述脚本：** [`docs/INTERVIEW_SCRIPT.md`](docs/INTERVIEW_SCRIPT.md)  
+**预生成样例（GitHub 可预览）：** [`examples/demo_output/interview_dashboard.html`](examples/demo_output/interview_dashboard.html)
+
+---
+
 ## 诚实边界（Honest scope）
 
 | 组件 | 角色 |
 |------|------|
 | **DeepTeam** | 红队 / 攻击生成引擎（可选依赖） |
 | **BuiltinHeuristicEngine** | 本仓库默认、始终可用的启发式多轮对抗引擎 |
-| **本仓库** | 场景包（scenario packs）× 归因 Judge × 双循环资产（gold/error/challenge）× Markdown/JSON 报告 |
+| **本仓库** | 场景包（scenario packs）× 归因 Judge × 双循环资产（gold/error/challenge）× Markdown/JSON/HTML 报告 |
 
 本项目**不是** DeepTeam 的 fork，也不替代其核心能力；它解决的是「评测编排、失败归因、双循环资产回流」这一层。
 
@@ -33,6 +50,8 @@ flowchart LR
   Engine --> Traces[Trace list]
   Traces --> Judge[AttributionJudge]
   Judge --> Report[report.md + badcases.jsonl]
+  Report --> Dash[interview_dashboard.html]
+  Pairwise[Pairwise Rubric Judge] --> Dash
 ```
 
 ---
@@ -56,6 +75,7 @@ make demo
 
 - `artifacts/report.md` — Markdown 评测报告
 - `artifacts/badcases.jsonl` — 失败 case 回流银行
+- `artifacts/summary.json` — 结构化摘要
 
 可选 DeepTeam 引擎（需自行安装并配置模型回调）：
 
@@ -72,6 +92,7 @@ dual-loop-eval demo --engine deepteam
 dual-loop-eval demo          # 默认 heuristic 引擎
 dual-loop-eval test-pack     # 校验场景包结构
 dual-loop-eval pairwise-demo # Pairwise Rubric Judge demo
+dual-loop-eval interview     # 面试一键：demo + pairwise + HTML dashboard
 python -m dual_loop_eval.cli demo
 ```
 
@@ -127,19 +148,22 @@ dual-loop-eval pairwise-demo
 ## 开发
 
 ```bash
-make test      # pytest，无网络
-make demo      # 端到端本地 demo
-make pairwise  # Pairwise Rubric Judge demo
+make test       # pytest，无网络
+make demo       # 端到端本地 demo
+make pairwise   # Pairwise Rubric Judge demo
+make interview  # 面试 dashboard（推荐）
 ```
 
 ---
 
 ## English summary
 
-**dual-loop-eval** is a thin orchestration layer on top of optional [DeepTeam](https://github.com/confident-ai/deepteam) plus an always-available `BuiltinHeuristicEngine`. This repo owns **scenario packs**, an **attribution Judge**, **dual-loop JSONL assets**, and **report / badcase** outputs — not the red-team engine itself.
+**dual-loop-eval** is a thin orchestration layer on top of optional [DeepTeam](https://github.com/confident-ai/deepteam) plus an always-available `BuiltinHeuristicEngine`. This repo owns **scenario packs**, an **attribution Judge**, **dual-loop JSONL assets**, and **report / badcase / interview dashboard** outputs — not the red-team engine itself.
 
 ```bash
-make install && make demo && make test
+make install && make interview && make test
 ```
+
+Interview script (Chinese, ~2 min): [`docs/INTERVIEW_SCRIPT.md`](docs/INTERVIEW_SCRIPT.md).
 
 License: Apache-2.0. DeepTeam credit: see `NOTICE`.
