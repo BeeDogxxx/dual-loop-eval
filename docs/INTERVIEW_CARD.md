@@ -42,7 +42,7 @@
 | 为啥全红？ | Demo Agent 故意脆弱，展示归因链；看 locus/fix，不刷绿。 |
 | DeepTeam？ | 可选；没装走 heuristic，面试只走 mock。 |
 | 用了 LLM？ | 默认 mock；可接 OpenAI-compatible，演示不依赖。 |
-| 和 Auto Rubrics？ | 吸收三坑教训的迷你可跑子集，不声称复现全文。 |
+| 和 Auto Rubrics？ | 迷你可跑子集：三坑 + Bootstrap 稳定选择 + CV 贪心筛 Rubric；不声称复现全文。 |
 | 金标怎么进闭环？ | 高精度偏好并入 gold 类资产，Runner 下轮加载。 |
 
 ---

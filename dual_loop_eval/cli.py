@@ -98,6 +98,35 @@ def cmd_pairwise_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_pairwise_select(args: argparse.Namespace) -> int:
+    """Bootstrap Stability Selection + greedy CV rubric screening."""
+    from dual_loop_eval.judge.pairwise import run_pairwise_select
+
+    settings = get_settings()
+    artifact_dir = args.artifact_dir or str(settings.artifact_dir)
+    summary = run_pairwise_select(
+        artifact_dir=artifact_dir,
+        rounds=args.rounds,
+        seed=args.seed,
+        mode=args.mode,
+        n_bootstraps=args.bootstraps,
+        threshold=args.threshold,
+        n_folds=args.folds,
+        max_rubrics=args.max_rubrics,
+    )
+    console.print(
+        f"[green]Pairwise select done[/] golden={summary['n_golden']} "
+        f"stable={summary['n_stable_rubrics']} "
+        f"greedy={summary['n_greedy_rubrics']} "
+        f"cv={summary['greedy_final_score']:.3f}"
+    )
+    console.print(f"  report: {summary['report']}")
+    console.print(f"  stability: {summary['stability_json']}")
+    console.print(f"  selected rubrics: {summary['selected_rubrics_jsonl']}")
+    console.print(f"  golden (selected): {summary['golden_selected_jsonl']}")
+    return 0
+
+
 def cmd_interview(args: argparse.Namespace) -> int:
     """Run demo + pairwise + write interview dashboard; print path + tips."""
     from dual_loop_eval.loop.dashboard import (
@@ -172,6 +201,20 @@ def build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--seed", type=int, default=42)
     pw.add_argument("--mode", choices=["mock", "llm"], default="mock")
     pw.set_defaults(func=cmd_pairwise_demo)
+
+    ps = sub.add_parser(
+        "pairwise-select",
+        help="Bootstrap Stability Selection + greedy CV rubric screening",
+    )
+    ps.add_argument("--artifact-dir", default=None)
+    ps.add_argument("--rounds", type=int, default=3)
+    ps.add_argument("--seed", type=int, default=42)
+    ps.add_argument("--mode", choices=["mock", "llm"], default="mock")
+    ps.add_argument("--bootstraps", type=int, default=20)
+    ps.add_argument("--threshold", type=float, default=0.6)
+    ps.add_argument("--folds", type=int, default=3)
+    ps.add_argument("--max-rubrics", type=int, default=4)
+    ps.set_defaults(func=cmd_pairwise_select)
 
     iv = sub.add_parser(
         "interview",

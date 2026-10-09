@@ -124,41 +124,49 @@ python -m dual_loop_eval.cli demo
 
 ## Pairwise Rubric Judge
 
-> 迷你 demo，**不是**完整 Auto Rubrics 流水线。吸收淘天 Auto Rubrics 类文章的三点教训：
+> 迷你 demo，**不是**完整 Auto Rubrics 流水线。吸收淘天 Auto Rubrics 类文章的教训：
 
-| 陷阱 | 我们的做法 |
+| 陷阱 / 手法 | 我们的做法 |
 |------|------------|
 | **位置偏差 (position bias)** | 每轮随机交换 A/B 展示顺序，再把 winner **映射回**原始 `a`/`b` |
 | **一致性 ≠ 正确性** | 多轮同意只作 **confidence filter**；有人工 `label_chosen` 时还必须对得上 |
 | **宁缺毋滥 (precision > coverage)** | Golden Set 只保留「一致 ∧ 标签匹配」的 (pair, rubric, judgment) |
+| **Bootstrap Stability Selection**（新增） | 对 preference pairs **有放回重采样**；统计每条 rubric 进入 Golden 的频率，保留频率 ≥ 阈值（默认 0.6） |
+| **交叉验证贪心筛 Rubric**（新增） | 在稳定候选上，贪心加入最能提升 hold-out 标签一致率的 rubric；无增益或达上限则停 |
 
 ```bash
-make pairwise
+make pairwise          # 位置随机 + 一致过滤 → Golden Set
+make pairwise-select   # 上式 + Bootstrap 稳定选择 + CV 贪心筛 Rubric
 # 或
 dual-loop-eval pairwise-demo
+dual-loop-eval pairwise-select
 ```
 
 产出：
 
-- `artifacts/pairwise_report.md` — 说明随机化 / 一致性过滤 / 与双循环资产的关系
+- `artifacts/pairwise_report.md` — 随机化 / 一致性 /（select 时）稳定性与贪心筛选说明
 - `artifacts/golden_preferences.jsonl` — 高精度偏好子集
+- `artifacts/rubric_stability.json` — Bootstrap 频率 + 贪心 CV 结果（`make pairwise-select`）
+- `artifacts/selected_rubrics.jsonl` — 筛后的 rubric 子集
+- `artifacts/golden_preferences_selected.jsonl` — 仅用筛后 rubric 再过滤的金标
 
 数据：`dual_loop_eval/assets/data/preference_pairs.jsonl`、`rubrics.jsonl`。默认 **mock** 启发式，无网络。
 
 ## 开发
 
 ```bash
-make test       # pytest，无网络
-make demo       # 端到端本地 demo
-make pairwise   # Pairwise Rubric Judge demo
-make interview  # 面试 dashboard（推荐）
+make test             # pytest，无网络
+make demo             # 端到端本地 demo
+make pairwise         # Pairwise Rubric Judge demo
+make pairwise-select  # Bootstrap + greedy CV rubric screening
+make interview        # 面试 dashboard（推荐）
 ```
 
 ---
 
 ## English summary
 
-**dual-loop-eval** is a thin orchestration layer on top of optional [DeepTeam](https://github.com/confident-ai/deepteam) plus an always-available `BuiltinHeuristicEngine`. This repo owns **scenario packs**, an **attribution Judge**, **dual-loop JSONL assets**, and **report / badcase / interview dashboard** outputs — not the red-team engine itself.
+**dual-loop-eval** is a thin orchestration layer on top of optional [DeepTeam](https://github.com/confident-ai/deepteam) plus an always-available `BuiltinHeuristicEngine`. This repo owns **scenario packs**, an **attribution Judge**, **dual-loop JSONL assets**, a **Pairwise Rubric Judge** (position randomization, consistency filter, Bootstrap Stability Selection, greedy CV rubric screening — mini demo, not full Auto Rubrics), and **report / badcase / interview dashboard** outputs — not the red-team engine itself.
 
 ```bash
 make install && make interview && make test

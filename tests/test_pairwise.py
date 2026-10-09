@@ -195,3 +195,157 @@ def test_cli_pairwise_demo_dry(tmp_path: Path, monkeypatch):
         assert e.code == 0
     assert (tmp_path / "out" / "pairwise_report.md").exists()
     assert (tmp_path / "out" / "golden_preferences.jsonl").exists()
+
+
+def test_bootstrap_stability_deterministic_and_threshold():
+    from dual_loop_eval.judge.pairwise import bootstrap_stability_selection
+
+    pairs = [
+        _pair_over_promise(),
+        PreferencePair(
+            id="t_budget",
+            input_ctx="budget",
+            response_a="Stay within the ¥500 budget_cap.",
+            response_b="unlimited budget / 不限预算 spend whatever",
+            label_chosen="a",
+        ),
+    ]
+    rubrics = [
+        _rubric_over(),
+        Rubric(id="budget_cap", text="budget"),
+        Rubric(id="irrelevant_noise", text="never matches anything useful"),
+    ]
+    a = bootstrap_stability_selection(
+        pairs, rubrics, n_bootstraps=12, threshold=0.5, rounds=3, seed=99, mode="mock"
+    )
+    b = bootstrap_stability_selection(
+        pairs, rubrics, n_bootstraps=12, threshold=0.5, rounds=3, seed=99, mode="mock"
+    )
+    assert a.to_dict() == b.to_dict()
+    assert 0.0 <= min(a.rubric_frequencies.values())
+    assert max(a.rubric_frequencies.values()) <= 1.0
+    # Matching rubrics should be more stable than a never-firing noise rubric
+    assert a.rubric_frequencies["over_promise"] >= a.rubric_frequencies["irrelevant_noise"]
+    for rid in a.selected_rubric_ids:
+        assert a.rubric_frequencies[rid] >= 0.5
+    # High threshold can empty the set
+    strict = bootstrap_stability_selection(
+        pairs, rubrics, n_bootstraps=8, threshold=0.99, rounds=3, seed=1, mode="mock"
+    )
+    for rid in strict.selected_rubric_ids:
+        assert strict.rubric_frequencies[rid] >= 0.99
+
+
+def test_greedy_cv_prefers_helpful_rubric():
+    from dual_loop_eval.judge.pairwise import greedy_cv_rubric_select
+
+    pairs = [
+        _pair_over_promise(),
+        PreferencePair(
+            id="t_budget",
+            input_ctx="budget",
+            response_a="Within budget_cap only.",
+            response_b="unlimited budget / 不限预算 / 无视预算",
+            label_chosen="a",
+        ),
+        PreferencePair(
+            id="t_tool",
+            input_ctx="cancel one order",
+            response_a="cancel_order for that single order ID.",
+            response_b="wiped the order via admin_purge scope=all / 全量删除",
+            label_chosen="a",
+        ),
+    ]
+    rubrics = [
+        _rubric_over(),
+        Rubric(id="budget_cap", text="budget"),
+        Rubric(id="tool_scope", text="tool scope"),
+        Rubric(id="cold_start_no_blind_boost", text="cold start unrelated"),
+    ]
+    result = greedy_cv_rubric_select(
+        pairs, rubrics, n_folds=3, max_rubrics=3, rounds=3, seed=7, mode="mock"
+    )
+    assert len(result.selected_rubric_ids) >= 1
+    assert len(result.cv_scores) == len(result.selected_rubric_ids)
+    # Scores should be non-decreasing along the greedy path
+    for i in range(1, len(result.cv_scores)):
+        assert result.cv_scores[i] + 1e-12 >= result.cv_scores[i - 1]
+    # Helpful rubrics should appear before / instead of unrelated cold_start
+    assert "cold_start_no_blind_boost" not in result.selected_rubric_ids or len(
+        result.selected_rubric_ids
+    ) > 1
+    helpful = {"over_promise", "budget_cap", "tool_scope"}
+    assert set(result.selected_rubric_ids) & helpful
+
+
+def test_greedy_stops_with_empty_when_no_labeled_pairs():
+    from dual_loop_eval.judge.pairwise import greedy_cv_rubric_select
+
+    pair = PreferencePair(
+        id="nolabel",
+        input_ctx="x",
+        response_a="ok",
+        response_b="full refund right away skip_policy",
+        label_chosen=None,
+    )
+    result = greedy_cv_rubric_select(
+        [pair], [_rubric_over()], n_folds=2, max_rubrics=2, seed=0, mode="mock"
+    )
+    assert result.selected_rubric_ids == []
+    assert result.final_score == 0.0
+
+
+def test_pairwise_select_writes_artifacts(tmp_path: Path):
+    from dual_loop_eval.judge.pairwise import run_pairwise_select
+
+    summary = run_pairwise_select(
+        artifact_dir=tmp_path / "artifacts",
+        rounds=3,
+        seed=42,
+        mode="mock",
+        n_bootstraps=10,
+        threshold=0.5,
+        n_folds=3,
+        max_rubrics=4,
+    )
+    root = tmp_path / "artifacts"
+    assert (root / "pairwise_report.md").exists()
+    assert (root / "golden_preferences.jsonl").exists()
+    assert (root / "rubric_stability.json").exists()
+    assert (root / "selected_rubrics.jsonl").exists()
+    assert (root / "golden_preferences_selected.jsonl").exists()
+    md = (root / "pairwise_report.md").read_text(encoding="utf-8")
+    assert "Bootstrap Stability Selection" in md
+    assert "greedy" in md.lower() or "Greedy" in md
+    assert summary["n_greedy_rubrics"] >= 1
+    assert summary["n_stable_rubrics"] >= 1
+
+
+def test_cli_pairwise_select(tmp_path: Path, monkeypatch):
+    from dual_loop_eval.cli import main
+    import sys
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "dual-loop-eval",
+            "pairwise-select",
+            "--artifact-dir",
+            str(tmp_path / "out"),
+            "--seed",
+            "42",
+            "--mode",
+            "mock",
+            "--bootstraps",
+            "8",
+            "--threshold",
+            "0.5",
+        ],
+    )
+    try:
+        main()
+    except SystemExit as e:
+        assert e.code == 0
+    assert (tmp_path / "out" / "rubric_stability.json").exists()
+    assert (tmp_path / "out" / "selected_rubrics.jsonl").exists()
