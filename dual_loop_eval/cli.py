@@ -32,17 +32,11 @@ def cmd_demo(args: argparse.Namespace) -> int:
         openai_base_url=settings.openai_base_url,
         openai_model=settings.openai_model,
     )
-    try:
-        runner.run()
-    except (ImportError, NotImplementedError, RuntimeError) as exc:
-        if engine == "deepteam":
-            console.print(f"[yellow]DeepTeam unavailable:[/] {exc}")
-            console.print("[yellow]Falling back to heuristic engine…[/]")
-            runner.engine_name = "heuristic"
-            runner.run()
-        else:
-            raise
-    return 0
+    results = runner.run()
+    errors = sum(r.status == "error" for r in results)
+    if errors:
+        console.print(f"[red]Evaluation incomplete:[/] {errors} execution errors. See execution_errors.jsonl.")
+    return 2 if errors else 0
 
 
 def cmd_test_pack(args: argparse.Namespace) -> int:
@@ -246,7 +240,11 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if not getattr(args, "func", None):
         args = parser.parse_args(["demo"])
-    code = args.func(args)
+    try:
+        code = args.func(args)
+    except (ImportError, NotImplementedError) as exc:
+        console.print(f"Unavailable capability: {exc}", style="red", markup=False)
+        code = 2
     raise SystemExit(code)
 
 

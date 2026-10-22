@@ -10,7 +10,7 @@
 
 ## 面试 DEMO（推荐）
 
-> 周四面试：笔记本上 **一条命令 → 离线 HTML dashboard → 讲清双环 + 归因 + Pairwise**（≈2 分钟）。无需 API Key。
+> 笔记本上 **一条命令 → 离线 HTML dashboard → 查看场景、归因与 Pairwise 流程**。无需 API Key；默认使用自建示例、演示 Agent 与关键词评分，不代表真实模型效果。
 
 ```bash
 make interview
@@ -20,7 +20,7 @@ dual-loop-eval interview
 
 成功后打开终端打印的绝对路径：`artifacts/interview_dashboard.html`（自包含 CSS，无 CDN）。
 
-**口述脚本：** [`docs/INTERVIEW_SCRIPT.md · 一页卡 [`docs/INTERVIEW_CARD.md`](docs/INTERVIEW_CARD.md) / [HTML](docs/INTERVIEW_CARD.html)`](docs/INTERVIEW_SCRIPT.md)  
+**口述脚本：** [演示脚本](docs/INTERVIEW_SCRIPT.md) · [一页卡](docs/INTERVIEW_CARD.md) / [HTML](docs/INTERVIEW_CARD.html)
 **预生成样例（GitHub 可预览）：** [`examples/demo_output/interview_dashboard.html`](examples/demo_output/interview_dashboard.html)
 
 ---
@@ -76,6 +76,17 @@ make demo
 - `artifacts/report.md` — Markdown 评测报告
 - `artifacts/badcases.jsonl` — 失败 case 回流银行
 - `artifacts/summary.json` — 结构化摘要
+- `artifacts/traces.jsonl` — 所有场景的原始对话轨迹，与结果按 `scenario_id` 对齐
+- `artifacts/execution_errors.jsonl` — 被测 Agent 或评分器执行失败，单独存档
+
+### 结果可信度与异常处理
+
+- `status=complete` 才有 `pass` 和 `score`；`status=error` 的两项值均为 `null`。执行错误不计入通过／失败、通过率或均分，也不进入业务 Bad Case。
+- `summary.json` 使用 `schema_version=2`，记录 `judge`、配置的 `judge_model`、`evaluated` 和 `errors`。当没有有效评测时，`pass_rate`、`average_score` 为 `null`。
+- Markdown 和 HTML 都显示评分来源与执行错误；`badcases.jsonl` 中的业务失败保留原始 `trace`，便于复核。再次运行会覆盖同一输出目录，需留存时请指定不同的 `--artifact-dir`。
+- `--judge llm` 缺少密钥、请求失败或响应格式不合格时，记录错误并以退出码 **2** 结束；不会静默改用 mock。字符串 `"false"`、越界概率、NaN 和缺失字段均不作为有效评分。
+- Pairwise 的 LLM 模式尚未实现：`--mode llm` 会明确报错，退出码为 **2**。当前 Pairwise 结果全部来自离线启发式演示。
+- 自动验证覆盖流程与故障处理，不等于评分准确率验证；真实 LLM 服务和中文业务校准需另行验证。
 
 可选 DeepTeam 引擎（需自行安装并配置模型回调）：
 
@@ -83,6 +94,8 @@ make demo
 pip install -e ".[deepteam]"
 dual-loop-eval demo --engine deepteam
 ```
+
+DeepTeam 适配层仍为实验性。缺少依赖、无法解释的返回结构或无法映射到场景时会报错，不自动替换引擎或补造对话。当前支持显式 `scenario_id` 与 `turns` / `conversation` 的完整场景结果；真实 DeepTeam 版本兼容性尚未在本仓库 CI 中验证。离线演示请显式使用 `--engine heuristic`。
 
 ---
 
@@ -116,7 +129,7 @@ python -m dual_loop_eval.cli demo
 - `error.jsonl` — 已知失败模式
 - `challenge.jsonl` — 加压 / 边界 case
 
-由 `DualLoopRunner` 加载，与场景包一起驱动评测闭环。
+当前 `DualLoopRunner` 读取并展示这三类资产的数量，实际执行的是 `customer_service_v1` 场景包。资产尚未自动转成回归场景，`badcases.jsonl` 也不会自动写回 gold/error/challenge；完整的审核、回流和回归执行是后续工作。
 
 ---
 
@@ -161,6 +174,8 @@ make pairwise         # Pairwise Rubric Judge demo
 make pairwise-select  # Bootstrap + greedy CV rubric screening
 make interview        # 面试 dashboard（推荐）
 ```
+
+GitHub Actions 会在 Python 3.10 与 3.14 上运行离线测试和演示流程，不配置或调用付费模型服务。异常行为的复现与验收步骤见 [执行完整性验证](docs/EXECUTION_INTEGRITY.md)。
 
 ---
 

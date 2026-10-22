@@ -14,6 +14,7 @@ from dual_loop_eval.loop.report import (
     render_markdown_report,
     write_badcases,
     write_json_summary,
+    write_execution_errors,
 )
 from dual_loop_eval.scenarios.packs import get_pack
 
@@ -67,6 +68,10 @@ class DualLoopRunner:
             f"[bold]dual-loop-eval[/] pack={self.pack_name} engine={self.engine_name}"
         )
         traces = engine.run(target, scenarios)
+        self.artifact_dir.mkdir(parents=True, exist_ok=True)
+        with (self.artifact_dir / "traces.jsonl").open("w", encoding="utf-8") as fh:
+            for trace in traces:
+                fh.write(trace.model_dump_json() + "\n")
 
         judge = AttributionJudge(
             mode=self.judge_mode,
@@ -76,12 +81,12 @@ class DualLoopRunner:
         )
         results = [judge.judge(t) for t in traces]
 
-        self.artifact_dir.mkdir(parents=True, exist_ok=True)
         report_md = render_markdown_report(
             results,
             pack_name=self.pack_name,
             engine_name=self.engine_name,
             assets_summary=assets_summary,
+            judge_mode=self.judge_mode,
         )
         report_path = self.artifact_dir / "report.md"
         report_path.write_text(report_md, encoding="utf-8")
@@ -90,8 +95,11 @@ class DualLoopRunner:
             results,
             pack_name=self.pack_name,
             engine_name=self.engine_name,
+            judge_mode=self.judge_mode,
+            judge_model=self.openai_model if self.judge_mode == "llm" else None,
         )
-        n_bad = write_badcases(self.artifact_dir / "badcases.jsonl", results)
+        n_bad = write_badcases(self.artifact_dir / "badcases.jsonl", results, traces)
+        write_execution_errors(self.artifact_dir / "execution_errors.jsonl", results)
 
         console.print(f"[green]Wrote[/] {report_path}")
         console.print(f"[green]Wrote[/] {self.artifact_dir / 'badcases.jsonl'} ({n_bad} badcases)")

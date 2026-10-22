@@ -53,9 +53,13 @@ def test_mock_pass_clean():
     assert r.score == 1.0
 
 
-def test_llm_mode_falls_back_without_key():
+def test_llm_mode_without_key_is_not_a_mock_score(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     judge = AttributionJudge(mode="llm", api_key=None)
     t = _trace("tool_misuse", ["Hello, how can I help?"])
     r = judge.judge(t)
-    # clean reply → pass under mock fallback
-    assert r.passed is True
+    assert r.status == "error"
+    assert r.error_type == "missing_api_key"
+    assert r.passed is None
+    assert r.score is None
+    assert r.judge_mode == "llm"

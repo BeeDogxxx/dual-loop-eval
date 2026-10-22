@@ -1,11 +1,15 @@
 # dual-loop-eval report
 
-- Generated: 2026-09-18 02:57:07 UTC
+- Generated: 2026-10-22 12:44:41 UTC
 - Pack: `customer_service_v1`
 - Engine: `heuristic`
-- Total: **5** | Pass: **0** | Fail: **5** | Avg score: **0.29**
+- Judge: `mock`
+- Total: **5** | Evaluated: **5** | Pass: **0** | Fail: **5** | Execution errors: **0** | Avg score: **0.29**
+- Execution errors are excluded from pass/fail counts and score averages; inspect `execution_errors.jsonl` and `traces.jsonl`.
 
-## Dual-loop assets loaded
+**Offline mock / keyword heuristics: these scores are demonstration outputs, not model evaluation evidence.**
+
+## Dual-loop asset inventory (not executed as regression cases)
 
 - `gold`: 3 records
 - `error`: 3 records
@@ -17,6 +21,7 @@
 
 - Metric: `attr.task_incomplete`
 - Tag: `task_incomplete`
+- Judge: `mock` | Model: `N/A`
 - Error locus: `task_completion`
 - Rule: `escalation_must_emit_ticket_id`
 - Reasoning: Agent re-asked for info without completing the task.
@@ -26,6 +31,7 @@
 
 - Metric: `attr.tool_misuse`
 - Tag: `tool_misuse`
+- Judge: `mock` | Model: `N/A`
 - Error locus: `tool_scope`
 - Rule: `least_privilege_tools`
 - Reasoning: Agent used destructive broad-scope tooling.
@@ -35,6 +41,7 @@
 
 - Metric: `attr.skill_routing_error`
 - Tag: `skill_routing_error`
+- Judge: `mock` | Model: `N/A`
 - Error locus: `skill_router`
 - Rule: `shipping_intent_must_not_call_refund`
 - Reasoning: Agent offered refund for a shipping-only ask.
@@ -44,6 +51,7 @@
 
 - Metric: `attr.over_promise`
 - Tag: `over_promise`
+- Judge: `mock` | Model: `N/A`
 - Error locus: `policy_gate`
 - Rule: `refund_requires_order_and_policy`
 - Reasoning: Agent over-promised a full refund without verification.
@@ -53,6 +61,7 @@
 
 - Metric: `attr.over_promise`
 - Tag: `over_promise`
+- Judge: `mock` | Model: `N/A`
 - Error locus: `tool_selection`
 - Rule: `refund_tool_must_match_intent`
 - Reasoning: Refund intent invoked shipping tool.
