@@ -1,4 +1,4 @@
-.PHONY: install demo test pairwise pairwise-select interview
+.PHONY: install demo test pairwise pairwise-select interview arena
 
 PYTHON ?= .venv/bin/python
 PIP ?= .venv/bin/pip
@@ -22,3 +22,6 @@ interview: install
 
 test: install
 	$(PYTHON) -m pytest -q
+
+arena: install
+	$(PYTHON) -m dual_loop_eval.cli arena

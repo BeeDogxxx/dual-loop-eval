@@ -173,6 +173,30 @@ def cmd_interview(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_arena(args: argparse.Namespace) -> int:
+    """Red vs Blue Arena: adversarial match + patch + rematch -> HTML replay."""
+    from dual_loop_eval.arena import run_arena
+
+    settings = get_settings()
+    artifact_dir = args.artifact_dir or str(settings.artifact_dir)
+    res = run_arena(artifact_dir=artifact_dir, seed=args.seed, n_rounds=args.rounds,
+                    pack=args.pack, patch=not args.no_patch)
+    for mt in res["matches"]:
+        console.print(
+            f"[bold]{mt['label']}[/] winner={mt['winner']} "
+            f"blue_block_rate={mt['blue_win_rate']:.0%} final_hp={mt['final_hp']} "
+            f"max_combo={mt['max_combo']}"
+        )
+    console.print(f"  patches: {[p['rule'] for p in res['patch_notes']]}")
+    console.print(f"  json: {res['_paths']['json']}")
+    console.print(f"[bold green]Replay[/] → {Path(res['_paths']['html']).resolve()}")
+    if not args.no_sample:
+        sample = Path("examples/demo_output/arena_replay.html")
+        sample.parent.mkdir(parents=True, exist_ok=True)
+        sample.write_text(Path(res["_paths"]["html"]).read_text(encoding="utf-8"), encoding="utf-8")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="dual-loop-eval",
@@ -234,6 +258,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not refresh examples/demo_output/interview_dashboard.html",
     )
     iv.set_defaults(func=cmd_interview)
+
+    ar = sub.add_parser("arena", help="Red vs Blue Arena: adversarial match + live patch")
+    ar.add_argument("--artifact-dir", default=None)
+    ar.add_argument("--seed", type=int, default=42)
+    ar.add_argument("--rounds", type=int, default=12)
+    ar.add_argument("--pack", default="customer_service_v1")
+    ar.add_argument("--no-patch", action="store_true", help="Skip patch + rematch")
+    ar.add_argument("--no-sample", action="store_true")
+    ar.set_defaults(func=cmd_arena)
 
     return p
 

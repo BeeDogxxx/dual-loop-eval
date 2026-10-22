@@ -25,6 +25,19 @@ dual-loop-eval interview
 
 ---
 
+## 红蓝对抗竞技场 · Red vs Blue Arena
+
+回合制对抗：**Red** 用 `customer_service_v1` 场景出招，命中后升级变异策略（direct → paraphrase → role_play → pressure → multi_turn_setup）连击；**Blue** 是 demo 客服 Agent；**Referee** 是现有 AttributionJudge，每回合给出 `error_locus / attributed_rule / fix_suggestion`。第一场打完后，Blue 把裁判的修复建议写进 playbook 规则（patch），再打一场复赛，直接演示「双循环」。
+
+```bash
+make arena        # → artifacts/arena_replay.html + artifacts/arena_result.json
+python -m dual_loop_eval.cli arena --seed 7 --rounds 12 [--no-patch]
+```
+
+离线单文件 HTML（无 CDN）：血条、播放/暂停/单步（←/→/空格）、攻击卡、裁判气泡、归因标签、补丁说明、前后对比和记分板。样例：`examples/demo_output/arena_replay.html`。默认 seed=42 时，Blue 拦截率从 0% 升到 100%，胜者从 RED 变为 BLUE。
+
+**诚实边界：** 这是 mock/启发式演示。Red 是模板变异，Blue 是故意留漏洞的 demo agent，patch 是按意图套用的规则回复，不是真实 LLM 对战，也不是自动改 prompt。在固定 seed 下结果可复现。English: offline, deterministic Red-vs-Blue match refereed by the attribution judge, followed by a patch and a rematch; heuristic demo only, not a real LLM battle unless you wire one in.
+
 ## 诚实边界（Honest scope）
 
 | 组件 | 角色 |
