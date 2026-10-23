@@ -78,12 +78,15 @@ def load_artifact_bundle(artifact_dir: Path | str) -> dict[str, Any]:
     return {
         "pack": summary.get("pack", "—"),
         "engine": summary.get("engine", "heuristic"),
+        "judge": summary.get("judge", "unrecorded (legacy report)"),
+        "judge_model": summary.get("judge_model"),
         "total": summary.get("total", len(results)),
         "passed": summary.get("passed", sum(1 for r in results if r.get("pass"))),
         "failed": summary.get(
             "failed",
-            sum(1 for r in results if not r.get("pass")),
+            sum(1 for r in results if r.get("status", "complete") == "complete" and r.get("pass") is False),
         ),
+        "errors": summary.get("errors", sum(r.get("status") == "error" for r in results)),
         "results": results,
         "golden": golden,
         "pairwise": pw_stats,
@@ -97,7 +100,7 @@ def _arch_cards_html() -> str:
         ("AttackEngine", "Heuristic 默认 / DeepTeam 可选", "offline mock path"),
         ("Attribution Judge", "失败归因 · locus · rule · fix", "error → fix loop"),
         ("Pairwise Rubric", "位置随机化 + 一致过滤", "precision > coverage"),
-        ("Dual-loop Assets", "gold / error / challenge", "回流下一轮评测"),
+        ("Dual-loop Assets", "gold / error / challenge", "资产清单 · 尚未驱动回归"),
         ("Report + Dashboard", "MD / JSONL / HTML", "面试可演示"),
     ]
     parts = ['<div class="arch">']
@@ -121,8 +124,9 @@ def _results_table_html(results: list[dict[str, Any]]) -> str:
     rows = []
     for r in results:
         passed = bool(r.get("pass"))
-        badge = "pass" if passed else "fail"
-        status = "PASS" if passed else "FAIL"
+        is_error = r.get("status") == "error"
+        badge = "error" if is_error else "pass" if passed else "fail"
+        status = "ERROR" if is_error else "PASS" if passed else "FAIL"
         rows.append(
             "<tr>"
             f"<td><code>{_esc(r.get('scenario_id', '—'))}</code></td>"
@@ -195,7 +199,7 @@ def _qa_section_html() -> str:
         (
             "Q2: Attribution Judge 输出什么？ / What does the attribution Judge emit?",
             "每个失败 case：error_locus（落点）+ attributed_rule（规则）+ fix_suggestion（修复建议），"
-            "回流 badcases.jsonl，对应双循环的 error 资产。"
+            "导出 badcases.jsonl 并保留原始对话；审核后转成回归资产仍需后续实现。"
             " Each fail gets locus + rule + fix → badcase bank.",
         ),
         (
@@ -289,6 +293,7 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
 }
 .badge.fail { background: rgba(232,122,122,0.2); color: var(--fail); }
 .badge.pass { background: rgba(107,207,142,0.2); color: var(--pass); }
+.badge.error { background: rgba(224,179,90,0.2); color: var(--warn); }
 .stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
 .stat {
   background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
@@ -319,6 +324,8 @@ def render_interview_dashboard(bundle: dict[str, Any]) -> str:
     total = bundle.get("total") or 0
     passed = bundle.get("passed") or 0
     failed = bundle.get("failed") or 0
+    errors = bundle.get("errors") or 0
+    judge = bundle.get("judge", "unrecorded (legacy report)")
     pack = bundle.get("pack") or "—"
     engine = bundle.get("engine") or "—"
 
@@ -341,6 +348,7 @@ def render_interview_dashboard(bundle: dict[str, Any]) -> str:
     <span class="scope">Honest scope · DeepTeam = optional engine · 本仓库 = 编排与归因，不是引擎 fork</span>
     <div class="meta">
       Pack: <code>{_esc(pack)}</code> · Engine: <code>{_esc(engine)}</code>
+      · Judge: <code>{_esc(judge)}</code> · Model: <code>{_esc(bundle.get('judge_model') or 'N/A')}</code>
       · Artifacts: <code>{_esc(bundle.get('artifact_dir', 'artifacts'))}</code>
     </div>
   </section>
@@ -353,7 +361,9 @@ def render_interview_dashboard(bundle: dict[str, Any]) -> str:
     <div class="kpi"><div class="n">{_esc(total)}</div><div class="l">Total scenarios</div></div>
     <div class="kpi"><div class="n" style="color:var(--pass)">{_esc(passed)}</div><div class="l">Passed</div></div>
     <div class="kpi"><div class="n" style="color:var(--fail)">{_esc(failed)}</div><div class="l">Failed → badcases</div></div>
+    <div class="kpi"><div class="n" style="color:var(--warn)">{_esc(errors)}</div><div class="l">Execution errors · 未评分</div></div>
   </div>
+  <p class="note">执行错误不计入通过／失败，也不进入业务 Bad Case。原始对话见 <code>traces.jsonl</code>，错误见 <code>execution_errors.jsonl</code>。Mock 为关键词演示评分，不能作为真实模型效果证明。</p>
   {_results_table_html(bundle.get("results") or [])}
 
   <h2>B · Pairwise golden set <span class="en">位置随机化 · 一致过滤 · 宁缺毋滥</span></h2>

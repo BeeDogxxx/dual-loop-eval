@@ -29,13 +29,19 @@ class BuiltinHeuristicEngine:
             turns: list[Turn] = []
             for i, user_msg in enumerate(selected):
                 turns.append(Turn(role="user", content=user_msg, meta={"turn": i}))
+                reply_meta = {"turn": i}
                 try:
                     reply = target_callback(user_msg)
+                    if not isinstance(reply, str) or not reply.strip():
+                        raise ValueError("Target must return a non-empty string")
                 except Exception as exc:  # noqa: BLE001 — capture for judging
-                    reply = f"[target_error] {exc}"
+                    reply = ""
+                    reply_meta["execution_error"] = type(exc).__name__
                 turns.append(
-                    Turn(role="assistant", content=reply, meta={"turn": i})
+                    Turn(role="assistant", content=reply, meta=reply_meta)
                 )
+                if "execution_error" in reply_meta:
+                    break
 
             traces.append(
                 Trace(

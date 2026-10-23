@@ -1,0 +1,35 @@
+name: Offline evaluation checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install test dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Run offline regression tests
+        run: python -m pytest -q
+      - name: Run offline demo and rubric selection
+        run: |
+          python -m dual_loop_eval.cli interview --no-sample --artifact-dir artifacts/interview
+          python -m dual_loop_eval.cli pairwise-select --mode mock --artifact-dir artifacts/pairwise

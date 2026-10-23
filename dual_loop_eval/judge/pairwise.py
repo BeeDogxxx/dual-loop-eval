@@ -141,8 +141,9 @@ class PairwiseRubricJudge:
         mode: Literal["mock", "llm"] = "mock",
     ) -> PairwiseJudgment:
         if mode == "llm":
-            # No network in default path — fall back to mock heuristics.
-            return self._judge_mock_once(pair, rubric, swap=swap)
+            raise NotImplementedError("Pairwise LLM judging is not implemented. Use --mode mock for the offline demo.")
+        if mode != "mock":
+            raise ValueError(f"Unsupported pairwise mode: {mode}")
         return self._judge_mock_once(pair, rubric, swap=swap)
 
     def _judge_mock_once(
@@ -769,6 +770,8 @@ def write_pairwise_report(
     lines = [
         "# Pairwise Rubric Judge Report",
         "",
+        "- Judge: **mock** (offline keyword heuristics; not real model evaluation)",
+        "",
         "> Mini demo (not a full Auto Rubrics pipeline). Links to the dual-loop "
         "narrative: high-precision golden preferences feed the gold asset bank; "
         "inconsistent or label-mismatched pairs stay out of the promotion path.",
@@ -787,9 +790,9 @@ def write_pairwise_report(
         "",
         "## Dual-loop link",
         "",
-        "Accepted golden preferences can join `assets/data/gold.jsonl` style "
-        "banks that `DualLoopRunner` already loads — closing the loop from "
-        "pairwise preference → gold asset → next eval round.",
+        "Accepted preferences are exported for manual review. The runner currently "
+        "inventories gold/error/challenge assets but does not execute them as regression "
+        "cases. Promotion and execution in the next eval round remain future work.",
         "",
         "## Run summary",
         "",
@@ -822,6 +825,7 @@ def write_pairwise_report(
     with out_jsonl.open("w", encoding="utf-8") as fh:
         for pair, rubric, j in golden:
             rec = {
+                "judge_mode": "mock",
                 "pair_id": pair.id,
                 "rubric_id": rubric.id,
                 "winner": j.winner,

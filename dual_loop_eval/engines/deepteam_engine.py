@@ -16,8 +16,8 @@ class DeepTeamEngine:
 
     DeepTeam's public API centers on ``deepteam.red_team`` with a model
     callback. This wrapper maps our Scenario packs into a small vulnerability
-    set when possible; otherwise raises a clear error so callers fall back
-    to BuiltinHeuristicEngine.
+    set when possible; otherwise raises a clear error. Offline demos must
+    explicitly select BuiltinHeuristicEngine.
     """
 
     def __init__(self, model_callback: Callable[[str], str] | None = None) -> None:
@@ -83,52 +83,38 @@ class DeepTeamEngine:
         scenarios: list[Scenario],
         callback: Callable[[str], str],
     ) -> list[Trace]:
-        """Best-effort conversion; if unknown shape, synthesize from scenarios."""
+        """Accept explicitly mapped conversations; never manufacture engine evidence."""
+        if not isinstance(result, list) or not result:
+            raise NotImplementedError("Unsupported DeepTeam result shape; no synthetic traces were generated. Use --engine heuristic for the offline demo.")
+        scenarios_by_id = {scenario.id: scenario for scenario in scenarios}
+        seen: set[str] = set()
         traces: list[Trace] = []
-        # If result looks like a list of objects with conversations, map them
-        if isinstance(result, list) and result:
-            for i, item in enumerate(result):
-                sid = scenarios[i % len(scenarios)].id if scenarios else f"dt_{i}"
-                tag = (
-                    scenarios[i % len(scenarios)].category
-                    if scenarios
-                    else "deepteam"
-                )
-                turns: list[Turn] = []
-                conv = getattr(item, "turns", None) or getattr(
-                    item, "conversation", None
-                )
-                if isinstance(conv, list):
-                    for t in conv:
-                        if isinstance(t, dict):
-                            turns.append(
-                                Turn(
-                                    role=str(t.get("role", "user")),
-                                    content=str(t.get("content", "")),
-                                )
-                            )
-                if not turns:
-                    # Single-shot probe
-                    msg = scenarios[i % len(scenarios)].attack_scripts[0] if scenarios else "probe"
-                    turns = [
-                        Turn(role="user", content=msg),
-                        Turn(role="assistant", content=str(callback(msg))),
-                    ]
-                traces.append(
-                    Trace(
-                        scenario_id=sid,
-                        vulnerability_tag=tag,
-                        turns=turns,
-                        metadata={"source": "deepteam", "raw_type": type(item).__name__},
-                    )
-                )
-            return traces
-
-        # Unknown result — document and fall through to heuristic-style synthesis
-        from dual_loop_eval.engines.heuristic import BuiltinHeuristicEngine
-
-        synth = BuiltinHeuristicEngine().run(callback, scenarios)
-        for t in synth:
-            t.metadata["deepteam_raw"] = repr(result)[:500]
-            t.metadata["source"] = "deepteam_fallback_heuristic"
-        return synth
+        for item in result:
+            get = item.get if isinstance(item, dict) else lambda key: getattr(item, key, None)
+            sid = get("scenario_id")
+            if not isinstance(sid, str) or sid not in scenarios_by_id or sid in seen:
+                raise NotImplementedError("DeepTeam results need unique, explicit scenario_id values from the requested pack.")
+            conv = get("turns") or get("conversation")
+            if not isinstance(conv, list) or not conv:
+                raise NotImplementedError("DeepTeam result has no supported conversation; no replacement probes were run.")
+            turns: list[Turn] = []
+            for turn in conv:
+                if (not isinstance(turn, dict)
+                    or turn.get("role") not in ("system", "user", "assistant", "tool")
+                    or not isinstance(turn.get("content"), str)
+                    or not turn["content"].strip()):
+                    raise NotImplementedError("DeepTeam conversation contains an unsupported turn.")
+                turns.append(Turn(role=turn["role"], content=turn["content"]))
+            if not {"user", "assistant"} <= {turn.role for turn in turns}:
+                raise NotImplementedError("DeepTeam conversation must contain user and assistant turns.")
+            scenario = scenarios_by_id[sid]
+            seen.add(sid)
+            traces.append(Trace(
+                scenario_id=sid,
+                vulnerability_tag=scenario.category,
+                turns=turns,
+                metadata={"source": "deepteam", "success_criteria": scenario.success_criteria},
+            ))
+        if seen != set(scenarios_by_id):
+            raise NotImplementedError("DeepTeam results do not cover the requested scenario pack.")
+        return traces
